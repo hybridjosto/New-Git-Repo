@@ -1,7 +1,29 @@
 #!/bin/bash
 
+# Handle Ctrl+C (SIGINT) to exit cleanly
+exit_handler() {
+  echo -e "\n🚪 Exiting..."
+  exit 1
+}
+trap exit_handler SIGINT
+
 setup_proj() {
+  ACCOUNT=$(gum choose --header "Select your GitHub account: " "hybridjosto" "jstockwell-bedford")
+  echo "🔄 Switching to $ACCOUNT GitHub account..."
+  gh auth switch --hostname github.com --user "$ACCOUNT" || {
+    echo "❌ Failed to switch to $ACCOUNT. Make sure you're logged in with \`gh auth login\`."
+    exit 1
+  }
+
+  # SSH host alias based on account choice
+  if [ "$ACCOUNT" = "personal" ]; then
+    SSH_HOST_ALIAS="github-personal"
+  else
+    SSH_HOST_ALIAS="github-work"
+  fi
   NAME=$(gum input --prompt "Enter the name of your new project: " --placeholder "my-project")
+  # Replace spaces with hyphens for repository naming
+  NAME_SLUG="${NAME// /-}"
   LANGUAGE=$(gum choose --header "Select the programming language: " "Python" "Bash" "Go")
   DESCRIPTION=$(gum write --placeholder "project description")
 
@@ -24,11 +46,13 @@ setup_proj() {
       git commit -m "Initial commit"
     fi
 
-    gh repo create "$NAME" --public --description "$DESCRIPTION" "${SOURCE_ARGS[@]}"
+    # Create GitHub repo with hyphenated name
+    gh repo create "$NAME_SLUG" --public --description "$DESCRIPTION" "${SOURCE_ARGS[@]}"
 
     # Add remote origin if not already added
-    if ! git remote | grep -q '^origin$'; then
-      git remote add origin "https://github.com/$(gh api user -q .login)/$NAME.git"
+    if ! git remote get-url origin >/dev/null 2>&1; then
+      USERNAME=$(gh api user -q .login)
+      git remote add origin git@$SSH_HOST_ALIAS:$USERNAME/$NAME_SLUG.git
     fi
 
     # Download .gitignore safely
@@ -41,6 +65,7 @@ setup_proj() {
     else
       echo "⚠️ Warning: .gitignore not found for $LANGUAGE"
     fi
+    git push origin main
   else
     echo "❌ Setup cancelled"
   fi
