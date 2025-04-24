@@ -25,8 +25,12 @@ setup_proj() {
   # SSH host alias based on account choice
   if [ "$ACCOUNT" = "personal" ]; then
     SSH_HOST_ALIAS="github-personal"
+    eval "$(ssh-agent -s)"
+    ssh-add ~/.ssh/id_ed25519_personal
   else
     SSH_HOST_ALIAS="github-work"
+    eval "$(ssh-agent -s)"
+    ssh-add ~/.ssh/id_ed25519_work
   fi
   echo "🔑 SSH host alias set to: $SSH_HOST_ALIAS"
   NAME=$(gum input --prompt "Enter the name of your new project: " --placeholder "my-project")
