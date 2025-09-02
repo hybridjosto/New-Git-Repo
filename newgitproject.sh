@@ -38,7 +38,7 @@ setup_proj() {
   # Generate URL-friendly slug by replacing spaces with hyphens
   NAME_SLUG="${NAME// /-}"
   echo "⚙️  Project slug generated: $NAME_SLUG"
-  LANGUAGE=$(gum choose --header "Select the programming language: " "Python" "Bash" "Go")
+  LANGUAGE=$(gum choose --header "Select the programming language: " "General" "Python" "Bash" "Go")
   echo "💻 Selected programming language: $LANGUAGE"
   DESCRIPTION=$(gum write --placeholder "project description")
   echo "📝 Project description set."
@@ -79,20 +79,24 @@ setup_proj() {
       echo "✅ Remote origin added."
     fi
 
-    # Download .gitignore safely
-    GITIGNORE_URL="https://raw.githubusercontent.com/github/gitignore/main/${LANGUAGE}.gitignore"
-    echo "📥 Downloading .gitignore for $LANGUAGE from $GITIGNORE_URL"
-    if curl -f -o .gitignore "$GITIGNORE_URL"; then
-      echo "✅ Downloaded .gitignore for $LANGUAGE"
-      git add .gitignore
-      git commit -m "Add .gitignore"
-      if git config --global push.autoSetupRemote; then
-        git push origin main
+    # Download .gitignore safely unless creating a general repository
+    if [ "$LANGUAGE" != "General" ]; then
+      GITIGNORE_URL="https://raw.githubusercontent.com/github/gitignore/main/${LANGUAGE}.gitignore"
+      echo "📥 Downloading .gitignore for $LANGUAGE from $GITIGNORE_URL"
+      if curl -f -o .gitignore "$GITIGNORE_URL"; then
+        echo "✅ Downloaded .gitignore for $LANGUAGE"
+        git add .gitignore
+        git commit -m "Add .gitignore"
+        if git config --global push.autoSetupRemote; then
+          git push origin main
+        else
+          git push --set-upstream origin main
+        fi
       else
-        git push --set-upstream origin main
+        echo "⚠️ Warning: .gitignore not found for $LANGUAGE"
       fi
     else
-      echo "⚠️ Warning: .gitignore not found for $LANGUAGE"
+      echo "ℹ️ Skipping .gitignore for general repository"
     fi
     echo "☁️ Pushing main branch to remote..."
     git push origin main
