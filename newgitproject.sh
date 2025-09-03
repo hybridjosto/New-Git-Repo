@@ -23,11 +23,11 @@ setup_proj() {
   echo "✅ Auth switched to $ACCOUNT"
 
   # SSH host alias based on account choice
-  if [ "$ACCOUNT" = "personal" ]; then
+  if [ "$ACCOUNT" = "hybridjosto" ]; then
     SSH_HOST_ALIAS="github-personal"
     eval "$(ssh-agent -s)"
     ssh-add ~/.ssh/id_ed25519_personal
-  else
+  elif [ "$ACCOUNT" = "jstockwell-bedford" ]; then
     SSH_HOST_ALIAS="github-work"
     eval "$(ssh-agent -s)"
     ssh-add ~/.ssh/id_ed25519_work
@@ -47,6 +47,7 @@ setup_proj() {
   echo "Language: $LANGUAGE"
   echo "Description: $DESCRIPTION"
 
+  $DESCRIPTION >readme.md
   # Set up git source flag conditionally
   SOURCE_ARGS=()
   if gum confirm "Push project files with repo?"; then
@@ -65,6 +66,9 @@ setup_proj() {
       git commit -m "Initial commit"
       echo "✅ Local git repository initialized."
     fi
+
+    git add readme.md
+    git commit -m "Add README.md"
 
     # Create GitHub repo with hyphenated name
     echo "🌐 Running: gh repo create $NAME_SLUG --public --description \"$DESCRIPTION\" ${SOURCE_ARGS[*]}"
